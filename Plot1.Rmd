@@ -1,0 +1,62 @@
+---
+title: "Optional_assignment"
+author: "Marcelladane"
+date: "27 July 2017"
+output: html_document
+---
+
+**Instructions:**
+
+To practice the plotting techniques you have learned so far, you will be making a graphic that explores relationships between variables. This practice is useful since we will later cover creating reproducible graphics in this class. You will be looking at a subset of a United States medical expenditures dataset with information on costs for different medical conditions and in different areas of the country.
+
+**You should do the following:**
+
+**1** Make a plot that answers the question: *what is the relationship between mean covered charges (Average.Covered.Charges) and mean total payments (Average.Total.Payments) in New York?*
+
+**2** Make a plot (possibly multi-panel) that answers the question: *how does the relationship between mean covered charges (Average.Covered.Charges) and mean total payments (Average.Total.Payments) vary by medical condition (DRG.Definition) and the state in which care was received (Provider.State)?*
+
+First you need to read the CSV file.
+```{r}
+
+packages <- c("data.table", "reshape2", "ggplot2")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+
+data <- read.csv(file = "payment.csv", header = TRUE, sep = ",")
+head(data)
+```
+
+For the first question you must subset just the data from NY
+
+You can use *grepl* and inform that the data is inside the variable Provider.State
+
+Then you can make a cleaner table (decrease unnecessary size) with just *Average.Covered.Charges* and *Average.Total.Payments*
+```{r}
+subNY <- grepl("NY", data$Provider.State, ignore.case = TRUE)
+NY_data <- data[subNY,]
+NY_data_selected <- NY_data[,c("Average.Covered.Charges" , "Average.Total.Payments")]
+```
+
+Now that you have a table with just the data you need
+
+
+You can plot it
+
+Plot details:
+
+Set the X and Y variable
+
+add titles using xlab, ylab, main
+
+Use alpha to introduce some transparency in the dots in the plot, its easier to visualize
+
+Set pch for whatever shape you want, I wanted 11 (a star)
+
+Since the graph is relationship, I added abline lm, to create a linear regression for the relation of Av.Payments and Av.Charges
+```{r}
+pdf("plot1.pdf")
+plot(NY_data_selected$Average.Covered.Charges, NY_data_selected$Average.Total.Payments, xlab = "Av. Charges ($)", ylab = "Av. Total Payments ($)",
+     main = "Relationship between Average in Charges and Payments in NY", col = adjustcolor("green", alpha = 0.4), pch = 11)
+abline(lm(NY_data_selected$Average.Total.Payments ~ NY_data_selected$Average.Covered.Charges), col = "red", lwd = 1)
+dev.off()
+```
+

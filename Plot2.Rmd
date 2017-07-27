@@ -1,0 +1,113 @@
+---
+title: "Optional_assignment_p2"
+author: "Marcelladane"
+date: "27 July 2017"
+output: html_document
+---
+
+
+**Instructions:**
+
+To practice the plotting techniques you have learned so far, you will be making a graphic that explores relationships between variables. This practice is useful since we will later cover creating reproducible graphics in this class. You will be looking at a subset of a United States medical expenditures dataset with information on costs for different medical conditions and in different areas of the country.
+
+**You should do the following:**
+
+**1** Make a plot that answers the question: *what is the relationship between mean covered charges (Average.Covered.Charges) and mean total payments (Average.Total.Payments) in New York?*
+
+**2** Make a plot (possibly multi-panel) that answers the question: *how does the relationship between mean covered charges (Average.Covered.Charges) and mean total payments (Average.Total.Payments) vary by medical condition (DRG.Definition) and the state in which care was received (Provider.State)?*
+
+First you need to read the CSV file.
+```{r}
+
+packages <- c("data.table", "reshape2", "ggplot2")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+
+data <- read.csv(file = "payment.csv", header = TRUE, sep = ",")
+head(data)
+```
+
+The first thing is to check the levels of the variable DRG
+```{r}
+levels(data$DRG.Definition)
+```
+
+As you can see the names are too big and will make a mess in the graphic, so I will transform them to be just the number and the inicials
+
+| Real name                                      | Abreviation   |
+| ---------------------------------------------- |:-------------:|
+| SIMPLE PNEUMONIA & PLEURISY W CC               | SP            |
+| HEART FAILURE & SHOCK W CC                     | HF            |
+| ESOPHAGITIS, GASTROENT & MISC D. DIS. W/O MCC  | DD            |
+| MISC DISORDERS OF NUTRITION,METABOLISM ...     | DD            |
+| KIDNEY & URINARY TRACT INFECTIONS W/O MCC      | UI            |
+| SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+...      | SS            |
+
+```{r}
+levels(data$DRG.Definition) <- c("194 - SP", "292 - HF", "392 - DD", "641 - ND", "690 - UI", "871 - SS")
+```
+
+Now I will subset again just the part of the data I want to use *Average.Covered.Charges*, *Average.Total.Payments*, *Provider.State* and *DRG.Definition*
+```{r}
+data_selected <- data[,c("DRG.Definition" , "Average.Covered.Charges" , "Average.Total.Payments", "Provider.State")]
+levels(data$Provider.State)
+head(data_selected)
+```
+
+Now I must to set key words for the plot, since the plot will be divided in STATE + CONDITION
+
+Use *unique* to extract unique elements
+```{r}
+State <- unique(data$Provider.State)
+Condition <- unique(data$DRG.Definition)
+```
+
+*Now for the plot*
+
+First I need to make a plot that will hold my 6 conditions and 6 States
+
+Increase margins of the plot to fit all 36 plots
+
+Since they are 36 plots, I will use a *for* loop to make all of them. 
+
+Use 2 dummy variables to call the key words "State" and "Condition" selected before
+
+use with and subset that Provider.State is "a" and DRG.Definition is "b"
+
+Then you can actually call the plot
+
+You will need to set limits for y and x axis, otherwise they will be different for each state and will be harder to visualize real differences
+
+Wanted to plot in magenta and with a transparency of 0.3 with dollar signs as symbol (just because the subject is cost)
+
+Add a abline for linear regression (lm) to show relationship of Total payment and charges
+
+Since this plot is multiple, set some main titles with *mtext*
+```{r}
+pdf("plot2.pdf")
+
+par(mfrow = c(6,6), oma = c(4,4,4,2), mar = rep(2,4))
+
+for (a in State) {
+  for (b in Condition){
+    with(subset(data_selected, Provider.State == a & DRG.Definition == b),
+         plot(Average.Covered.Charges, Average.Total.Payments, 
+         main = paste(a,b),
+         ylim = range(data_selected$Average.Total.Payments),
+         xlim = range(data_selected$Average.Covered.Charges),
+         col = adjustcolor("magenta", alpha = 0.3), pch = 35)
+    )
+    abline(lm(Average.Total.Payments~Average.Covered.Charges,
+           subset(data_selected, Provider.State == a & DRG.Definition == b)), 
+           col = "red")
+  }
+}
+
+mtext("Av. Covered Charges ($)", side = 1, outer = TRUE, line = 1)
+mtext("Av. Total Payments ($)", side = 2, outer = TRUE, line = 1)
+mtext("Relationship between Covered Charges and Total Payments \n (Divided by State and Condition clustes)", side = 3, outer = TRUE, font = 2,
+      line = 1)
+
+dev.off()
+```
+
+
